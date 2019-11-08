@@ -41,7 +41,7 @@ public:
     /*  Functions   */
     // Constructor, expects a filepath to a 3D model.
     CM_Model(GLchar* path);
-    void DumpTo(std::string targetPos);
+    void DumpTo(std::string targetPos, float scale = 1.0);
 private:
     std::string model_path;
     /*  Model Data  */
@@ -59,7 +59,7 @@ private:
     // The required info is returned as a Texture struct.
     vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName);
     void dumpMetaInfo(rapidjson::Document & doc);
-    rapidjson::Value dumpMesh(CM_Mesh& mesh,rapidjson::Document &doc);
+    rapidjson::Value dumpMesh(CM_Mesh& mesh,rapidjson::Document &doc, float scale);
     rapidjson::Value dumpMaterial(CM_Material& mat, rapidjson::Document & doc);
     void processMaterials(const aiScene* scene);
 };

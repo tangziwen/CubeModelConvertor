@@ -12,13 +12,18 @@ int main(int argc, char *argv[])
         cout<<"Please Wait..."<<endl;
         auto old = clock();
         auto theModel = new tzw::CM_Model(argv[1]);
+    	float size = 1.0;
+    	if(argc > 3)
+    	{
+    		size = atof(argv[3]);
+    	}
         if (argc > 2)
         {
-            theModel->DumpTo(argv[2]);
+            theModel->DumpTo(argv[2], size);
         }
         else
         {
-            theModel->DumpTo("./out.tzw");
+            theModel->DumpTo("./out.tzw", size);
         }
         cout<<"Done! Time: "<<clock() - old <<" ms" <<endl;
     }else

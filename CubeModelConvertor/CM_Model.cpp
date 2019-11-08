@@ -10,7 +10,7 @@ CM_Model::CM_Model(GLchar *path)
     this->model_path = path;
 }
 
-void CM_Model::DumpTo(string targetPos)
+void CM_Model::DumpTo(string targetPos, float scale)
 {
     rapidjson::Document document;
     document.SetObject();
@@ -31,7 +31,7 @@ void CM_Model::DumpTo(string targetPos)
     rapidjson::Value meshArray(rapidjson::kArrayType);
     for(auto& mesh : meshes)
     {
-        auto result = dumpMesh(mesh,document);
+        auto result = dumpMesh(mesh,document, scale);
         meshArray.PushBack(result,allocator);
     }
     document.AddMember("MeshList", meshArray, allocator);
@@ -56,7 +56,7 @@ void CM_Model::dumpMetaInfo(rapidjson::Document &doc)
     doc.AddMember("info",info,allocator);
 }
 
-rapidjson::Value CM_Model::dumpMesh(CM_Mesh &mesh,rapidjson::Document &doc)
+rapidjson::Value CM_Model::dumpMesh(CM_Mesh &mesh,rapidjson::Document &doc, float scale)
 {
     auto& allocator = doc.GetAllocator();
     rapidjson::Value theMesh(rapidjson::kObjectType);
@@ -67,9 +67,9 @@ rapidjson::Value CM_Model::dumpMesh(CM_Mesh &mesh,rapidjson::Document &doc)
         rapidjson::Value vertexAttribute(rapidjson::kArrayType);
 
         //pos
-        vertexAttribute.PushBack(vertex.Position.x,allocator);
-        vertexAttribute.PushBack(vertex.Position.y,allocator);
-        vertexAttribute.PushBack(vertex.Position.z,allocator);
+        vertexAttribute.PushBack(vertex.Position.x * scale,allocator);
+        vertexAttribute.PushBack(vertex.Position.y * scale,allocator);
+        vertexAttribute.PushBack(vertex.Position.z * scale,allocator);
 
         //normal
         vertexAttribute.PushBack(vertex.Normal.x,allocator);

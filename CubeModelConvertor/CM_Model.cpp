@@ -9,24 +9,50 @@ CM_Model::CM_Model(GLchar *path)
     this->loadModel(path);
     this->model_path = path;
 }
+std::string CM_Model::getFileNameWithOutExtension(std::string path)
+{
+	auto idx = path.rfind('.');
 
+	if(idx != std::string::npos)
+	{
+	    return path.substr(0,idx);
+	}
+	else
+	{
+	    // No extension found
+		return path;
+	}
+}
 void CM_Model::DumpTo(string targetPos, float scale)
 {
     rapidjson::Document document;
     document.SetObject();
     auto& allocator = document.GetAllocator();
 
+
+    rapidjson::Document MatDocument;
+	MatDocument.SetObject();
     dumpMetaInfo(document);
+	auto modelName = getFileNameWithOutExtension(targetPos);
+    std::string matFileName = modelName + ".matList";
 
     if (m_materials.size()> 0)
     {
+
+    	auto& matAllocator = MatDocument.GetAllocator();
         rapidjson::Value materialArray(rapidjson::kArrayType);
+    	rapidjson::Value matExtraArray(rapidjson::kArrayType);
         for(auto& material : m_materials)
         {
             auto result = dumpMaterial(material,document);
             materialArray.PushBack(result,allocator);
+
+        	auto resultExtra = dumpMaterialSTD(modelName, material,document);
+        	matExtraArray.PushBack(resultExtra, matAllocator);
         }
         document.AddMember("materialList", materialArray, allocator);
+    	document.AddMember("MaterialsFileName", matFileName, allocator);
+    	MatDocument.AddMember("MaterialList", matExtraArray, matAllocator);
     }
     rapidjson::Value meshArray(rapidjson::kArrayType);
     for(auto& mesh : meshes)
@@ -43,6 +69,15 @@ void CM_Model::DumpTo(string targetPos, float scale)
     {
         fputs(buffer.GetString(), file);
         fclose(file);
+    }
+    FILE* matFile = fopen(matFileName.c_str(), "wb");
+    if(matFile)
+    {
+	    rapidjson::StringBuffer  matBuffer;
+	    rapidjson::PrettyWriter<rapidjson::StringBuffer> matWriter(matBuffer);
+    	MatDocument.Accept(matWriter);
+        fputs(matBuffer.GetString(), matFile);
+        fclose(matFile);
     }
 }
 
@@ -92,6 +127,7 @@ rapidjson::Value CM_Model::dumpMesh(CM_Mesh &mesh,rapidjson::Document &doc, floa
     return theMesh;
 }
 #define ADDSTR(OBJ,FIELD,STR,ALLOC) OBJ.AddMember(FIELD,rapidjson::Value(STR.c_str(),ALLOC),ALLOC)
+#define ADDCSTR(OBJ,FIELD,STR,ALLOC) OBJ.AddMember(FIELD,rapidjson::Value(STR,ALLOC),ALLOC)
 rapidjson::Value CM_Model::dumpMaterial(CM_Material &mat, rapidjson::Document &doc)
 {
     auto& allocator = doc.GetAllocator();
@@ -110,6 +146,96 @@ rapidjson::Value CM_Model::dumpMaterial(CM_Material &mat, rapidjson::Document &d
     return material;
 }
 
+rapidjson::Value genV4(float x, float y, float z, float w, rapidjson::Document &doc)
+{
+	auto& allocator = doc.GetAllocator();
+    rapidjson::Value attributeNode(rapidjson::kArrayType);
+	attributeNode.PushBack(x, allocator);
+	attributeNode.PushBack(y, allocator);
+	attributeNode.PushBack(z, allocator);
+	attributeNode.PushBack(w, allocator);
+	return attributeNode;
+}
+
+
+rapidjson::Value CM_Model::dumpMaterialSTD(std::string name, CM_Material &mat, rapidjson::Document &doc)
+{
+    auto& allocator = doc.GetAllocator();
+    rapidjson::Value material(rapidjson::kObjectType);
+
+	//shader
+    rapidjson::Value shaders(rapidjson::kObjectType);
+	ADDCSTR(shaders, "vs","Shaders/GeometryPass_v.glsl",allocator);
+	ADDCSTR(shaders, "fs","Shaders/GeometryPass_v.glsl",allocator);
+    material.AddMember("shaders", shaders, allocator);
+	
+    ADDCSTR(material, "name", name.c_str(), allocator);
+
+
+	rapidjson::Value propertyNode(rapidjson::kObjectType);
+	rapidjson::Value attributeNode(rapidjson::kArrayType);
+	rapidjson::Value mapNode(rapidjson::kArrayType);
+
+	rapidjson::Value TU_camPos(rapidjson::kObjectType);
+	rapidjson::Value TU_roughness(rapidjson::kObjectType);
+	rapidjson::Value TU_color(rapidjson::kObjectType);
+	
+	ADDCSTR(TU_camPos, "name","TU_camPos",allocator);
+	ADDCSTR(TU_camPos, "type","semantic_CameraPos",allocator);
+
+	ADDCSTR(TU_roughness, "name","TU_roughness",allocator);
+	ADDCSTR(TU_roughness, "type","float",allocator);
+	TU_roughness.AddMember("default", 1.0, allocator);
+
+	ADDCSTR(TU_color, "name","TU_color",allocator);
+	ADDCSTR(TU_color, "type","vec4",allocator);
+    TU_color.AddMember("default", genV4(1, 1, 1, 1, doc), allocator);
+
+	attributeNode.PushBack(TU_camPos, allocator);
+	attributeNode.PushBack(TU_roughness, allocator);
+	attributeNode.PushBack(TU_color, allocator);
+
+    rapidjson::Value DiffuseMap(rapidjson::kArrayType);
+	DiffuseMap.PushBack("DiffuseMap", allocator);
+	DiffuseMap.PushBack(0, allocator);
+	DiffuseMap.PushBack(rapidjson::Value(mat.diffuseMap.c_str(),allocator), allocator);
+	
+	rapidjson::Value MetallicMap(rapidjson::kArrayType);
+	MetallicMap.PushBack("MetallicMap", allocator);
+	MetallicMap.PushBack(1, allocator);
+	
+	rapidjson::Value RoughnessMap(rapidjson::kArrayType);
+	RoughnessMap.PushBack("RoughnessMap", allocator);
+	RoughnessMap.PushBack(2, allocator);
+	
+	rapidjson::Value NormalMap(rapidjson::kArrayType);
+	NormalMap.PushBack("NormalMap", allocator);
+	NormalMap.PushBack(3, allocator);
+
+	mapNode.PushBack(DiffuseMap, allocator);
+	mapNode.PushBack(MetallicMap, allocator);
+	mapNode.PushBack(RoughnessMap, allocator);
+	mapNode.PushBack(NormalMap, allocator);
+
+    propertyNode.AddMember("attributes", attributeNode, allocator);
+	propertyNode.AddMember("maps", mapNode, allocator);
+
+	material.AddMember("propertyNode",propertyNode, allocator);
+	
+	// material.AddMember()
+    // ADDSTR(material,"diffuseMap",mat.diffuseMap,allocator);
+    // ADDSTR(material,"specularMap",mat.specularMap,allocator);
+    // ADDSTR(material,"ambientMap",mat.ambientMap,allocator);
+    // ADDSTR(material,"emissiveMap",mat.emissiveMap,allocator);
+    // ADDSTR(material,"heightMap",mat.heightMap,allocator);
+    // ADDSTR(material,"normalMap",mat.normalMap,allocator);
+    // ADDSTR(material,"shininessMap",mat.shininessMap,allocator);
+    // ADDSTR(material,"opacityMap",mat.opacityMap,allocator);
+    // ADDSTR(material,"displacementMap",mat.displacementMap,allocator);
+    // ADDSTR(material,"lightMap",mat.lightMap,allocator);
+    // ADDSTR(material,"reflectionMap",mat.reflectionMap,allocator);
+    return material;
+}
 void CM_Model::processMaterials(const aiScene *scene)
 {
     int num = scene->mNumMaterials;
@@ -173,6 +299,16 @@ void CM_Model::processMaterials(const aiScene *scene)
         {
             mat->GetTexture(aiTextureType_REFLECTION,0,&tmpStr);
             theMat.reflectionMap = tmpStr.C_Str();
+        }
+        if (mat->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0)
+        {
+            mat->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS,0,&tmpStr);
+            theMat.roughnessMap = tmpStr.C_Str();
+        }
+        if (mat->GetTextureCount(aiTextureType_METALNESS) > 0)
+        {
+            mat->GetTexture(aiTextureType_METALNESS,0,&tmpStr);
+            theMat.metallicMap = tmpStr.C_Str();
         }
     }
     m_materials.push_back(theMat);

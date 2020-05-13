@@ -33,6 +33,8 @@ struct CM_Material
     std::string displacementMap;
     std::string lightMap;
     std::string reflectionMap;
+	std::string roughnessMap;
+	std::string metallicMap;
 };
 
 class CM_Model
@@ -42,6 +44,7 @@ public:
     // Constructor, expects a filepath to a 3D model.
     CM_Model(GLchar* path);
     void DumpTo(std::string targetPos, float scale = 1.0);
+	std::string getFileNameWithOutExtension(std::string path);
 private:
     std::string model_path;
     /*  Model Data  */
@@ -61,6 +64,7 @@ private:
     void dumpMetaInfo(rapidjson::Document & doc);
     rapidjson::Value dumpMesh(CM_Mesh& mesh,rapidjson::Document &doc, float scale);
     rapidjson::Value dumpMaterial(CM_Material& mat, rapidjson::Document & doc);
+	rapidjson::Value dumpMaterialSTD(std::string name, CM_Material& mat, rapidjson::Document & doc);
     void processMaterials(const aiScene* scene);
 };
 

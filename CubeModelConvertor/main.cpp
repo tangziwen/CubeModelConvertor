@@ -2,6 +2,7 @@
 
 #include "CM_Model.h"
 #include <time.h>
+#include <filesystem>
 using namespace std;
 
 
@@ -13,14 +14,19 @@ int main(int argc, char *argv[])
         auto old = clock();
         auto theModel = new tzw::CM_Model(argv[1]);
     	float size = 1.0;
-        if (argc > 2)
+    	std::string targetName;
+        if (argc > 3)
         {
         	size = atof(argv[3]);
         }
-        else
+        if (argc > 2)
         {
-            theModel->DumpTo(theModel->getFileNameWithOutExtension(argv[1]) + ".tzw", size);
+        	targetName = argv[2];
+        }else
+        {
+	        targetName = "out";
         }
+    	theModel->DumpTo(theModel->getFileNameWithOutExtension(targetName) + ".tzw", size);
         cout<<"Done! Time: "<<clock() - old <<" ms" <<endl;
     }else
     {

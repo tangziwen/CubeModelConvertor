@@ -35,7 +35,7 @@ void CM_Model::DumpTo(string targetPos, float scale)
     dumpMetaInfo(document);
 	auto modelName = getFileNameWithOutExtension(targetPos);
     std::string matFileName = modelName + ".matList";
-
+    printf("m_materials size %d\n",m_materials.size());
     if (m_materials.size()> 0)
     {
 
@@ -220,7 +220,7 @@ rapidjson::Value CM_Model::dumpMaterialSTD(std::string name, CM_Material &mat, r
     propertyNode.AddMember("attributes", attributeNode, allocator);
 	propertyNode.AddMember("maps", mapNode, allocator);
 
-	material.AddMember("propertyNode",propertyNode, allocator);
+	material.AddMember("property",propertyNode, allocator);
 	
 	// material.AddMember()
     // ADDSTR(material,"diffuseMap",mat.diffuseMap,allocator);
@@ -310,8 +310,8 @@ void CM_Model::processMaterials(const aiScene *scene)
             mat->GetTexture(aiTextureType_METALNESS,0,&tmpStr);
             theMat.metallicMap = tmpStr.C_Str();
         }
+    	m_materials.push_back(theMat);
     }
-    m_materials.push_back(theMat);
 }
 
 
@@ -409,7 +409,7 @@ CM_Mesh CM_Model::processMesh(aiMesh *mesh, const aiScene *scene)
         vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
     }
-
+    printf("the Material Index %d %d\n", scene->mNumMaterials,  mesh->mMaterialIndex);
     // Return a mesh object created from the extracted mesh data
     return CM_Mesh(vertices, indices, textures,mesh->mMaterialIndex);
 }

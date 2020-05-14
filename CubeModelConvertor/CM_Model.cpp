@@ -166,7 +166,7 @@ rapidjson::Value CM_Model::dumpMaterialSTD(std::string name, CM_Material &mat, r
 	//shader
     rapidjson::Value shaders(rapidjson::kObjectType);
 	ADDCSTR(shaders, "vs","Shaders/GeometryPass_v.glsl",allocator);
-	ADDCSTR(shaders, "fs","Shaders/GeometryPass_v.glsl",allocator);
+	ADDCSTR(shaders, "fs","Shaders/GeometryPassPBR_f.glsl",allocator);
     material.AddMember("shaders", shaders, allocator);
 	
     ADDCSTR(material, "name", name.c_str(), allocator);

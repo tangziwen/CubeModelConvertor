@@ -203,14 +203,17 @@ rapidjson::Value CM_Model::dumpMaterialSTD(std::string name, CM_Material &mat, r
 	rapidjson::Value MetallicMap(rapidjson::kArrayType);
 	MetallicMap.PushBack("MetallicMap", allocator);
 	MetallicMap.PushBack(1, allocator);
+	MetallicMap.PushBack(rapidjson::Value(mat.metallicMap.c_str(),allocator), allocator);
 	
 	rapidjson::Value RoughnessMap(rapidjson::kArrayType);
 	RoughnessMap.PushBack("RoughnessMap", allocator);
 	RoughnessMap.PushBack(2, allocator);
+	RoughnessMap.PushBack(rapidjson::Value(mat.roughnessMap.c_str(),allocator), allocator);
 	
 	rapidjson::Value NormalMap(rapidjson::kArrayType);
 	NormalMap.PushBack("NormalMap", allocator);
 	NormalMap.PushBack(3, allocator);
+	NormalMap.PushBack(rapidjson::Value(mat.normalMap.c_str(),allocator), allocator);
 
 	mapNode.PushBack(DiffuseMap, allocator);
 	mapNode.PushBack(MetallicMap, allocator);
